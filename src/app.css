@@ -1,0 +1,227 @@
+@font-face {
+  font-family: jbmono;
+  src: url("./assets/jbmono.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  /* block, not swap: the checkbox glyphs have no system fallback, so a swap
+     would show a line of tofu boxes and then rearrange it. */
+  font-display: block;
+}
+
+:root {
+  --bg: #0b0b0b;
+  --fg: #c9c9c4;
+  --dim: #76777a;
+  --rule: #282828;
+  --hi: #eee;
+  --lnk: #7fb3ff;
+  --ok: #5fbf5f;
+  --bad: #e06c60;
+  color-scheme: dark light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #fdfdfb;
+    --fg: #25272a;
+    --dim: #767b80;
+    --rule: #e0e0d8;
+    --hi: #000;
+    --lnk: #0b5fbf;
+    --ok: #1d7a37;
+    --bad: #b3261e;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font:
+    14px / 1.5 jbmono,
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* dvh, not vh: mobile Safari's URL bar shrinks the visual viewport, and vh
+   would leave the last lines of the note under it. */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 9px 12px 8px;
+}
+
+/* Title, connecting rule, status -- the rule is the only part that gives up
+   space when the window is narrow. */
+.bar {
+  display: grid;
+  grid-template-columns: minmax(0, auto) 1fr auto;
+  align-items: baseline;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.bar .rule {
+  height: 0;
+  border-bottom: 1px dashed var(--rule);
+  align-self: center;
+  min-width: 12px;
+}
+
+h1 {
+  all: unset;
+  color: var(--hi);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.dim {
+  color: var(--dim);
+}
+.ok {
+  color: var(--ok);
+}
+.bad {
+  color: var(--bad);
+}
+
+.status {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+textarea {
+  flex: 1 1 auto;
+  width: 100%;
+  margin: 6px 0 0;
+  padding: 0;
+  border: 0;
+  resize: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  /* 16px keeps iOS Safari from zooming the page when the field takes focus. */
+  font-size: 16px;
+  line-height: 1.6;
+  outline: none;
+  /* The glyphs are drawn to fill a cell, so tapping one has a real target. */
+  tab-size: 2;
+}
+
+textarea::placeholder {
+  color: var(--dim);
+}
+
+nav {
+  flex: 0 0 auto;
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid var(--rule);
+  color: var(--dim);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+}
+
+button.link {
+  all: unset;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+button.link:hover {
+  color: var(--lnk);
+}
+
+/* Setup ------------------------------------------------------------------- */
+
+form {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 34rem;
+}
+
+label {
+  display: block;
+  color: var(--dim);
+}
+
+.row {
+  display: flex;
+  gap: 6px;
+}
+
+input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 4px 6px;
+}
+
+input:focus {
+  outline: 1px solid var(--lnk);
+}
+
+button {
+  flex: 0 0 auto;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--bg);
+  background: var(--fg);
+  border: 0;
+  padding: 5px 14px;
+  cursor: pointer;
+}
+
+button.ghost {
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--rule);
+}
+
+.note {
+  color: var(--dim);
+  border-left: 2px solid var(--rule);
+  padding-left: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.note.warn {
+  color: var(--fg);
+  border-color: var(--ok);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}

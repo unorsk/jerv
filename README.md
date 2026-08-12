@@ -43,6 +43,20 @@ Nothing merges. If the same note is edited on two devices at once, the second
 save is refused with a conflict rather than overwriting — hit **reload** and
 redo the losing edit.
 
+## Why the file is base64 and not raw ciphertext
+
+The contents API is not a byte pipe. It runs charset detection over a blob, and
+when it decides the bytes are text in a legacy encoding it returns them
+transcoded to UTF-8 rather than as stored — while `sha` and `size` still
+describe the real blob, so the mismatch is silent. Random ciphertext fools it
+reliably; a 105-byte note came back as 166 bytes of would-be windows-1253 Greek
+and failed to decrypt with the correct key.
+
+Storing base64 means the blob is ASCII, which is already valid UTF-8, so there
+is nothing left to detect. The git blobs API (`/git/blobs/:sha`) does return the
+bytes faithfully and would also have worked, but it needs the sha first, so
+reading would cost two requests instead of one.
+
 ## Development
 
 ```

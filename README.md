@@ -91,7 +91,15 @@ npm run check      # lint, typecheck, test, build
 npm run font       # rebuild the subset font (needs uv)
 ```
 
-The font is JetBrains Mono Nerd Font, subset from 2.4 MB to 23 KB and inlined
-into the stylesheet, so the whole app is two requests and no third-party
-hosts. `tools/build-font.py` regenerates it from `~/Library/Fonts`; the result
-is committed, so an ordinary build never needs Python.
+The font is JetBrains Mono Nerd Font, whole — every icon in it is one you can
+paste into a note and see, rather than one the build had to think of in
+advance. `tools/build-font.py` compresses it to woff2 (2.4 MB of TTF to about
+1 MB) and nothing else; the result is committed, so an ordinary build never
+needs Python.
+
+It is served as its own request rather than inlined into the stylesheet: a
+megabyte of base64 would cost a third again and go stale with every deploy.
+Text does not wait for it — the stylesheet declares two faces off the one file,
+so words swap in from the system monospace immediately and only the icon planes
+block, since nothing on the system could stand in for those. Still no
+third-party hosts.

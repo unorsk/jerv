@@ -1,11 +1,28 @@
+/* Two faces off one file, so one download serves both. The text face carries no
+   unicode-range and covers everything; the symbol face is declared second so it
+   wins for the private-use planes, which is the only reason the order matters.
+
+   They differ only in font-display, and that is the whole point of splitting
+   them. The file is the entire Nerd Font, near a megabyte, so blocking on it
+   would leave the note invisible while it downloads: text swaps in from the
+   system monospace and reflows once, while the icons block -- a checkbox that
+   arrives late reads better than a line of tofu boxes that then rearranges,
+   and no system font could stand in for those codepoints anyway. */
 @font-face {
   font-family: jbmono;
   src: url("./assets/jbmono.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
-  /* block, not swap: the checkbox glyphs have no system fallback, so a swap
-     would show a line of tofu boxes and then rearrange it. */
+  font-display: swap;
+}
+
+@font-face {
+  font-family: jbmono;
+  src: url("./assets/jbmono.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
   font-display: block;
+  unicode-range: U+E000-F8FF, U+F0000-FFFFD;
 }
 
 :root {

@@ -68,25 +68,41 @@ body {
   padding: 9px 12px 8px;
 }
 
-/* Title, connecting rule, status -- the rule is the only part that gives up
-   space when the window is narrow. */
+/* Title, where you are, connecting rule, status. Flex rather than fixed
+   tracks: the same bar is drawn with and without the middle label. */
 .bar {
-  display: grid;
-  grid-template-columns: minmax(0, auto) 1fr auto;
+  display: flex;
   align-items: baseline;
   gap: 8px;
   flex: 0 0 auto;
 }
 
+/* Only the rule and the path give up space when the window is narrow; the
+   title and the status keep theirs. */
 .bar .rule {
+  flex: 1 1 auto;
   height: 0;
   border-bottom: 1px dashed var(--rule);
   align-self: center;
   min-width: 12px;
 }
 
+.where {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A heading inside a screen, drawn as the same rule. */
+.bar.section {
+  margin-top: 4px;
+}
+
 h1 {
   all: unset;
+  flex: 0 0 auto;
   color: var(--hi);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -103,6 +119,7 @@ h1 {
 }
 
 .status {
+  flex: 0 0 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -151,16 +168,101 @@ button.link:hover {
   color: var(--lnk);
 }
 
+button.link.on {
+  color: var(--hi);
+}
+
+/* Files ------------------------------------------------------------------- */
+
+.tabs {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin-top: 6px;
+}
+
+.crumb {
+  flex: 0 0 auto;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+/* The one part of a screen that scrolls, so the bar and the nav stay put. */
+.listing {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+/* One row, whether it is a link to a file or a repo with buttons after it. */
+.entry {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  padding: 1px 0;
+  font: inherit;
+  font-size: inherit;
+  color: var(--fg);
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.entry .name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+button.entry:hover .name {
+  color: var(--lnk);
+}
+
+.entry.on .name {
+  color: var(--hi);
+}
+
 /* Setup ------------------------------------------------------------------- */
 
-form {
+/* A column of controls that scrolls if it has to, leaving the bar and the nav
+   where they are. */
+.pane {
   flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   margin-top: 10px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   max-width: 34rem;
+}
+
+form {
+  flex: 0 0 auto;
+  margin-top: 8px;
+}
+
+/* [x] in text, because a native checkbox is the one control that cannot be
+   made to look like anything else. */
+button.toggle {
+  all: unset;
+  align-self: flex-start;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+button.toggle:hover {
+  color: var(--lnk);
+}
+
+/* Pushes the destructive button away from the ones next to it. Qualified,
+   because button.link resets margins with `all: unset`. */
+button.push {
+  margin-left: auto;
 }
 
 label {

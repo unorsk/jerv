@@ -1,17 +1,20 @@
 <script lang="ts">
 import { onMount, tick } from "svelte";
 import { toggleAt, toggleLine } from "./lib/checkbox.ts";
-import type { Config } from "./lib/config.ts";
-import { decrypt, encrypt, importKey } from "./lib/crypto.ts";
-import { read, write } from "./lib/github.ts";
+import type { Repo } from "./lib/config.ts";
+import { decode, encode } from "./lib/content.ts";
+import { importKey } from "./lib/crypto.ts";
+import { explain, read, write } from "./lib/github.ts";
 
 interface Props {
-  readonly config: Config;
-  readonly secret: string;
-  readonly onsetup: () => void;
+  readonly repo: Repo;
+  readonly secret: string | null;
+  readonly autosave: boolean;
+  readonly onfiles: () => void;
+  readonly onsettings: () => void;
 }
 
-const { config, secret, onsetup }: Props = $props();
+const { repo, secret, autosave, onfiles, onsettings }: Props = $props();
 
 /** Long enough that a burst of typing lands as one commit, short enough to forget about. */
 const SAVE_DELAY = 2000;
@@ -31,6 +34,7 @@ let area: HTMLTextAreaElement | undefined = $state();
 
 // Not $state: none of this is rendered, and making the in-flight flags
 // reactive would only invite re-entrancy through effects.
+// A null key is the plain repo -- see content.ts.
 let key: CryptoKey | null = null;
 let sha: string | null = null;
 let dirty = false;
@@ -38,21 +42,23 @@ let saving = false;
 let timer: ReturnType<typeof setTimeout> | undefined;
 
 function describe(cause: unknown): string {
+  // WebCrypto reports every decryption failure the same way, and by far the
+  // likeliest cause is the wrong key -- or a plain repo that is not plain.
   if (cause instanceof DOMException && cause.name === "OperationError") {
     return "wrong key for this file";
   }
-  if (cause instanceof TypeError) return "no connection";
-  return cause instanceof Error ? cause.message : String(cause);
+  return explain(cause);
 }
 
 async function load(): Promise<void> {
   status = { kind: "loading" };
   try {
-    key ??= await importKey(secret);
-    const blob = await read(config);
+    if (repo.encrypted && !secret) throw new Error("no key on this device — see settings");
+    key ??= repo.encrypted && secret ? await importKey(secret) : null;
+    const blob = await read(repo);
     // No file yet is the ordinary first run, not an error -- it gets created
     // by the first save.
-    text = blob ? await decrypt(key, blob.bytes) : "";
+    text = blob ? await decode(key, blob.bytes) : "";
     sha = blob?.sha ?? null;
     dirty = false;
     loaded = true;
@@ -64,7 +70,7 @@ async function load(): Promise<void> {
 
 async function save(): Promise<void> {
   clearTimeout(timer);
-  if (!key || !dirty || saving) return;
+  if (!loaded || !dirty || saving) return;
   saving = true;
   status = { kind: "saving" };
   // The text can move on while the request is in flight, so what was actually
@@ -72,7 +78,7 @@ async function save(): Promise<void> {
   const written = text;
   let ok = false;
   try {
-    sha = await write(config, await encrypt(key, written), sha, "notes");
+    sha = await write(repo, await encode(key, written), sha, repo.path);
     ok = true;
     if (written === text) {
       dirty = false;
@@ -87,7 +93,7 @@ async function save(): Promise<void> {
   } finally {
     saving = false;
   }
-  if (ok && dirty) schedule();
+  if (ok && dirty && autosave) schedule();
 }
 
 function schedule(): void {
@@ -98,7 +104,9 @@ function schedule(): void {
 function touch(): void {
   dirty = true;
   status = { kind: "dirty" };
-  schedule();
+  // Off by default: a save is a commit, and a commit should be something you
+  // asked for. Settings turns it on for the notes you type into all day.
+  if (autosave) schedule();
 }
 
 /** Swaps the text and puts the caret back where the user left it. */
@@ -136,13 +144,23 @@ function reload(): void {
   void load();
 }
 
+/**
+ * Leaving unmounts the editor and the text goes with it. With autosave off
+ * that is the one place an edit can be lost without being asked about.
+ */
+function leave(go: () => void): void {
+  if (dirty && !confirm("Discard unsaved changes and leave this file?")) return;
+  go();
+}
+
 onMount(() => {
   void load();
 
   // The phone is where edits get lost: switching apps can kill the tab without
-  // ever firing beforeunload, but it always goes hidden first.
+  // ever firing beforeunload, but it always goes hidden first. With autosave
+  // off nothing is written behind your back, so the guard is all there is.
   const flush = (): void => {
-    if (document.visibilityState === "hidden") void save();
+    if (autosave && document.visibilityState === "hidden") void save();
   };
   const guard = (event: BeforeUnloadEvent): void => {
     if (dirty) event.preventDefault();
@@ -163,6 +181,7 @@ const clock = (at: Date): string =>
 
 <div class="bar">
   <h1>jerv</h1>
+  <span class="where dim" title="{repo.owner}/{repo.repo}">{repo.path}</span>
   <span class="rule"></span>
   <span class="status">
     {#if status.kind === "loading"}
@@ -195,7 +214,9 @@ const clock = (at: Date): string =>
 ></textarea>
 
 <nav>
+  <button class="link" onclick={() => void save()}>save</button>
   <button class="link" onclick={reload}>reload</button>
-  <button class="link" onclick={onsetup}>setup</button>
+  <button class="link" onclick={() => leave(onfiles)}>files</button>
+  <button class="link" onclick={() => leave(onsettings)}>settings</button>
   <span>⌘S save · ⌘⏎ checkbox</span>
 </nav>

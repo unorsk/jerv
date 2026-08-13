@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { armour, unarmour } from "./github.ts";
+import { armour, decode, encode, unarmour } from "./content.ts";
 
 const random = (length: number): Uint8Array<ArrayBuffer> =>
   crypto.getRandomValues(new Uint8Array(length));
@@ -38,4 +38,12 @@ test("wraps into readable lines and ends with a newline", () => {
 test("an empty note still round trips", () => {
   const bytes = random(0);
   assert.deepEqual(unarmour(armour(bytes)), bytes);
+});
+
+/** A plain repo stores the file as typed -- no armour, no envelope, no marker. */
+test("without a key the file is the text itself", async () => {
+  const text = "# notes\n\n- ø, ß, 汉字\n";
+  const bytes = await encode(null, text);
+  assert.equal(new TextDecoder().decode(bytes), text);
+  assert.equal(await decode(null, bytes), text);
 });
